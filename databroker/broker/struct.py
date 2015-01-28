@@ -39,7 +39,7 @@ import six
 import getpass
 from collections import namedtuple
 
-__all__  = ['EventDescriptor', 'Event', 'Header', 'BeamLineConfig']
+__all__ = ['EventDescriptor', 'Event', 'StartRun', 'BeamLineConfig']
 
 
 def _or_None(func):
@@ -148,22 +148,19 @@ class entry_spec(namedtuple('entry_spec_base', ['name', 'ftype',
                                               default_function, description)
 
 
-header_spec = (entry_spec('id', 'str or None', lambda: None, 'desc'),
-               entry_spec('beamline_id', 'str', None, 'desc'),
-               entry_spec('beamline_config_id', 'str', None, 'desc'),
-               entry_spec('custom', 'dict or None', lambda: None, 'desc'),
-               entry_spec('end_time', 'int or None', lambda: None, 'desc'),
-               entry_spec('owner', 'str', getpass.getuser, 'desc'),
-               entry_spec('scan_id', 'int', None, 'desc'),
-               entry_spec('start_time', 'int', None, 'desc'),
-               entry_spec('status', "{'In Progress', 'Complete'}",
-                          lambda: 'In Progress', 'desc'))
+start_run_spec = (entry_spec('id', 'str or None', lambda: None, 'desc'),
+                  entry_spec('beamline_id', 'str', None, 'desc'),
+                  entry_spec('beamline_config_id', 'str', None, 'desc'),
+                  entry_spec('custom_id', 'int', None, 'desc'),
+                  entry_spec('end_time', 'int or None', lambda: None, 'desc'),
+                  entry_spec('owner', 'str', getpass.getuser, 'desc'),
+                  entry_spec('scan_id', 'int', None, 'desc'),
+                  entry_spec('start_time', 'int', None, 'desc'))
 """
-Field specification for run headers
+Field specification for start-run events
 """
 
 beamline_config_spec = (entry_spec('id', 'str or None', lambda: None, 'desc'),
-                        entry_spec('headers', 'list', list, 'desc'),
                         entry_spec('beamline_id', 'str', None, 'desc'),
                         entry_spec('custom', 'dict or None',
                                    lambda: None, 'desc'))
@@ -174,7 +171,7 @@ Field specification beam line configuration
 event_descriptor_spec = (entry_spec('id', 'str or None', lambda: None, 'desc'),
                          entry_spec('descriptor_name', 'str', None, 'desc'),
                          entry_spec('event_type_id', 'int', None, 'desc'),
-                         entry_spec('run_header_id', 'str', None, 'desc'),
+                         entry_spec('start_run_id', 'str', None, 'desc'),
                          entry_spec('tag', 'list', list, 'desc'),
                          entry_spec('type_descriptor', '?',
                                     lambda: None, 'desc'),
@@ -185,12 +182,10 @@ Field specification for event descriptors
 
 
 event_spec = (entry_spec('id', 'str or None', lambda: None, 'desc'),
-              entry_spec('data', 'dict', None, 'desc'),
-              entry_spec('time', 'int', None, 'desc'),
               entry_spec('event_descriptor_id', 'str', None, 'desc'),
-              entry_spec('run_header_id', 'str', None, 'desc'),
-              entry_spec('owner', 'str', getpass.getuser, 'desc'),
-              entry_spec('seq_no', 'int', lambda: 0, 'desc'))
+              entry_spec('seq_no', 'int', lambda: 0, 'desc'),
+              entry_spec('data', 'dict', None, 'desc'),
+              entry_spec('time', 'int', None, 'desc'))
 """
 Field specification for events
 """
@@ -310,7 +305,7 @@ def _spec_tuple_factory(spec_list, dict_name, cls_name):
                                            '__slots__': (),
                                            'as_dict': as_dict})
 
-Header = _spec_tuple_factory(header_spec, 'run_header', 'Header')
+StartRun = _spec_tuple_factory(start_run_spec, 'start_run', 'StartRun')
 BeamLineConfig = _spec_tuple_factory(beamline_config_spec,
                                      'beamline_config',
                                      'BeamLineConfig')
