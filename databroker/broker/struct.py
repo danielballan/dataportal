@@ -19,6 +19,9 @@ class BrokerStruct(object):
             if isinstance(attr, mongoengine.Document):
                 attr = BrokerStruct(attr)
             setattr(self, field, attr)
+            # For debugging, add a human-friendly time_as_datetime attribute.
+                if hasattr(self, 'time'):
+                    self.time_as_datetime = datetime.datetime.fromtimestamp(time)
 
     def __repr__(self):
         return "<BrokerStruct {0}>".format(self._name)
