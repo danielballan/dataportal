@@ -35,12 +35,14 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import six
+import copy
 from collections import namedtuple, deque
 import logging
 import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d
 import pandas.core.groupby  # to get custom exception
+from ..broker.simple_broker import _build_header
 
 
 logger = logging.getLogger(__name__)
@@ -173,6 +175,7 @@ class DataMuxer(object):
         self._timestamps_as_data = set()
         self._known_events = set()
         self._known_descriptors = set()
+        self.headers = set()
         self._stale = True
 
     @classmethod
@@ -272,6 +275,10 @@ class DataMuxer(object):
                 # TODO Look up source-specific default in a config file
                 # or some other source of reference data.
                 self.col_info[name] = col_info
+        if hasattr(descriptor, 'run_start'):
+            header = copy.copy(descriptor.run_start)
+            _build_header(header)  # run_start -> header in place
+            self.headers.add(header)
         self._known_descriptors.add(descriptor.id)
 
     @property

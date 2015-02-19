@@ -14,11 +14,12 @@ from .. import sources
 from ..sources import channelarchiver as ca
 from ..sources import switch
 from ..broker import DataBroker as db
+from ..muxer import DataMuxer
 from ..examples.sample_data import temperature_ramp
 
 from nose.tools import make_decorator
 from nose.tools import (assert_equal, assert_raises, assert_true,
-                        assert_false)
+                        assert_false, assert_less)
 
 
 from metadatastore.odm_templates import (BeamlineConfig, EventDescriptor,
@@ -30,10 +31,13 @@ logger = logging.getLogger(__name__)
 db_name = str(uuid.uuid4())
 conn = None
 blc = None
+insert_again = None
 
 
 def setup():
     global conn
+    global blc
+    global insert_again
     db_disconnect()
     conn = db_connect(db_name, 'localhost', 27017)
     blc = insert_beamline_config({}, ttime.time())
@@ -53,6 +57,8 @@ def setup():
                               beamline_config=insert_beamline_config(
                                   {}, time=0.))
         temperature_ramp.run(rs)
+        # This is a hook for inserting more data into the last run.
+        insert_again = lambda: temperature_ramp.run(rs)
 
 
 def teardown():
@@ -67,6 +73,22 @@ def test_basic_usage():
     header = db.find_headers(owner='nedbrainard')
     header = db.find_headers(owner='this owner does not exist')
     events = db.fetch_events(header)
+
+def test_update():
+    header = db[-1]
+    events = db.fetch_events(header)
+    dm = DataMuxer.from_events(events)
+    insert_again()
+    # First just check that that insert worked.
+    events_after = db.fetch_events(header)
+    assert_less(len(events), len(events_after))
+
+    # And now perform the test we are interested in.
+    len_before = len(dm['Tsam'])
+    db.update(dm)
+    len_after = len(dm['Tsam'])
+    assert_less(len_before, len_after)
+
 
 def test_indexing():
     header = db[-1]

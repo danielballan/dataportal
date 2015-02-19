@@ -112,6 +112,26 @@ class DataBroker(object):
             _build_header(rs)
         return run_start  # these have been built out into headers
 
+    @classmethod
+    def update(cls, dm):
+        """
+        Update the contents of a DataMuxer.
+
+        Inspect the Header(s) already represented in the DataMuxer
+        instance, and append all associated Events.
+
+        The DataMuxer is updated in place; nothing is returned.
+
+        Parameters
+        ----------
+        dm : DataMuxer
+        """
+        events = cls.fetch_events(dm.headers)
+        # Yes, this includes all the Events, including ones the DataMuxer
+        # may already have. The append operation below avoids keeping
+        # duplicates.
+        dm.append_events(events)
+
 
 def _get_archiver_data(ca_host, channels, start_time, end_time):
     archiver = sources.channelarchiver.Archiver(ca_host)
