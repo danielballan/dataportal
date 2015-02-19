@@ -14,6 +14,7 @@ from .. import sources
 from ..sources import channelarchiver as ca
 from ..sources import switch
 from ..broker import DataBroker as db
+from ..examples.sample_data import temperature_ramp
 
 from nose.tools import make_decorator
 from nose.tools import (assert_equal, assert_raises, assert_true,
@@ -47,9 +48,11 @@ def setup():
                          owner='docbrown', beamline_id='example',
                          beamline_config=insert_beamline_config({}, time=0.))
     for i in range(5):
-        insert_run_start(time=float(i), scan_id=i + 1,
-                         owner='nedbrainard', beamline_id='example',
-                         beamline_config=insert_beamline_config({}, time=0.))
+        rs = insert_run_start(time=float(i), scan_id=i + 1,
+                              owner='nedbrainard', beamline_id='example',
+                              beamline_config=insert_beamline_config(
+                                  {}, time=0.))
+        temperature_ramp.run(rs)
 
 
 def teardown():
@@ -64,7 +67,6 @@ def test_basic_usage():
     header = db.find_headers(owner='nedbrainard')
     header = db.find_headers(owner='this owner does not exist')
     events = db.fetch_events(header)
-
 
 def test_indexing():
     header = db[-1]
