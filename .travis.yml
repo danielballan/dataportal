@@ -16,6 +16,8 @@ before_install:
 install:
   - export GIT_FULL_HASH=`git rev-parse HEAD`
   - conda update conda --yes
+  # See: https://groups.google.com/a/continuum.io/forum/#!topic/conda/IAr9xTwOeC8
+  - conda update requests --yes
   - conda config --add channels soft-matter
   - conda create -n testenv --yes pip nose python=$TRAVIS_PYTHON_VERSION pymongo six pyyaml numpy pandas scikit-image pims h5py matplotlib
   - source activate testenv
