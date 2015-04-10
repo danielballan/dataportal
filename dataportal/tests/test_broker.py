@@ -186,6 +186,25 @@ def test_scan_id_lookup():
     assert_equal(scan_id, 3)
     # This should be the most *recent* Scan 3. There is ambiguity.
     assert_equal(owner, 'nedbrainard')
+    # Slicing [i:j] gets the most recents scans with IDs in range(i, j).
+    headers = db[2:4]
+    scan_ids = [h.scan_id for h in headers]
+    assert_equal(scan_ids, [2, 3])
+    all_owners_are_ned = all([h.owner == 'nedbrainard' for h in headers])
+    assert_true(all_owners_are_ned)
+
+    # Check that bad slicing raises.
+    f = lambda: db[-3:1]  # mixing - and + is nonsensical
+    assert_raises(ValueError, f)
+    f = lambda: db[:-3]  # infinitely into the past is too greedy
+    assert_raises(ValueError, f)
+    f = lambda: db[1:]  # dangerously ambiguous
+    assert_raises(ValueError, f)
+    db[:3]  # but this is fine, and should not raise
+
+    # Also, passing something is not an int, slice, or string should raise.
+    f = lambda: db[2.5]
+    assert_raises(ValueError, f)
 
 def test_uid_lookup():
     uid = str(uuid.uuid4())
