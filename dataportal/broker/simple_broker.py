@@ -2,6 +2,7 @@ from __future__ import print_function
 import sys
 import six  # noqa
 from six import StringIO
+from six.moves import range
 from collections import defaultdict, Iterable, deque
 from .. import sources
 from ..utils.console import color_print
@@ -26,23 +27,42 @@ class _DataBrokerClass(object):
     @classmethod
     def __getitem__(cls, key):
         if isinstance(key, slice):
-            # Interpret key as a slice into previous scans.
-            if key.start is not None and key.start > -1:
-                raise ValueError("Slices must be negative. The most recent "
-                                 "run is referred to as -1.")
-            if key.stop is not None and key.stop > -1:
-                raise ValueError("Slices must be negative. The most recent "
-                                 "run is referred to as -1.")
-            if key.stop is not None:
-                stop = -key.stop
+            if ((key.start is None or key.start > -1) and
+                (key.stop is None or key.stop > -1)):
+                # Interpret as a range of scan IDs.
+                if key.start is None:
+                    # [:3] -> [1:3].
+                    # Scan ID must be postiive, and this is safe interpretation
+                    # of user intention.
+                    start = 1
+                else:
+                    start = key.start
+                if key.stop is None:
+                    # User passed something like [:] or [3:]. Seems dangerous.
+                    raise ValueError("Range of scan IDs must include an "
+                                     "explicit upper bound.")
+                keys = range(start, key.stop)
+                return [cls.__getitem__(k) for k in keys]
+            if ((key.start is None or key.start < 0) and
+                (key.stop is None or key.stop < 0)):
+                # Interpret key as a slice into previous scans.
+                if key.stop is not None:
+                    stop = -key.stop
+                else:
+                    stop = None
+                if key.start is None:
+                    # [:-3] is too greedy
+                    raise ValueError("Cannot slice infinitely into the past; "
+                                     "the result could become too large.")
+                start = -key.start
+                result = list(find_last(start))[stop::key.step]
+                header = [Header.from_run_start(h) for h in result]
             else:
-                stop = None
-            if key.start is None:
-                raise ValueError("Cannot slice infinitely into the past; "
-                                 "the result could become too large.")
-            start = -key.start
-            result = list(find_last(start))[stop::key.step]
-            header = [Header.from_run_start(h) for h in result]
+                raise ValueError("Slices with both a positive and a negative "
+                                 "uninterpretable. Negative slices like "
+                                 "[-5:-2] retrieve recent scans; postive "
+                                 "positive slices like [2:5] return a range "
+                                 "of scan IDs.")
         elif isinstance(key, int):
             if key > -1:
                 # Interpret key as a scan_id.
