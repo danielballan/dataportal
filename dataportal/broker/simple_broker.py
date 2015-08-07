@@ -41,7 +41,7 @@ class _DataBrokerClass(object):
                     # User passed something like [:] or [3:]. Seems dangerous.
                     raise ValueError("Range of scan IDs must include an "
                                      "explicit upper bound.")
-                keys = range(start, key.stop)
+                keys = range(start, key.stop, key.step)
                 return [cls.__getitem__(k) for k in keys]
             if ((key.start is None or key.start < 0) and
                 (key.stop is None or key.stop < 0)):
